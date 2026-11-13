@@ -121,19 +121,56 @@ d:/chat/
 
 ---
 
+## 🗺️ Contributor Roadmap & Wishlist (What We Want to Build Next)
+
+We have mapped out a comprehensive roadmap of features, UI refinements, and architectural improvements. If you want to contribute, pick any item below or open an issue with your proposal!
+
+### 1. 🚀 High-Impact Add-On Features
+- [ ] **WebRTC HD Voice & Video Calling with Screen Sharing**:
+  - Implement one-on-one and departmental voice/video conference bridges.
+  - Enable live screen and camera sharing so plant supervisors can inspect physical machine parts directly from the discussion header.
+- [ ] **Embedded SCADA & MQTT Sensor Telemetry Gauges**:
+  - Render live sparklines and gauge charts (vibration, temperature, melt pressure, spindle RPM) inside chat bubbles for machine query tickets.
+- [ ] **Bi-Directional ERP / MES Webhook Adapters**:
+  - Connectors for SAP S/4HANA, Siemens Opcenter, and Salesforce CRM to automatically open a query room when a deviation ticket is logged, and resolve the ticket when the discussion completes.
+- [ ] **Real-Time Photo & Blueprint Annotation**:
+  - An interactive markup tool allowing engineers to circle defect sink marks or draw dimensional arrows directly onto uploaded machine inspection photos before sending.
+- [ ] **Voice-to-Text Auto Transcription**:
+  - Automatic voice note transcription using Whisper or Web Speech API for shopfloor operators wearing work gloves or protective PPE.
+- [ ] **AI-Powered Shift Handover & RCA Summary**:
+  - Auto-generate structured Root Cause Analysis (RCA) summaries and 8D reports from resolved discussion histories.
+
+### 2. 🎨 UI Polish & Visual Design
+- [ ] **Interactive Canvas Navigation (Pan, Zoom & Mini-Map)**:
+  - Add smooth mouse wheel zoom (`0.5x` to `2.0x`), smooth pan-and-drag, and an architectural mini-map in the bottom-left corner of the Railway Canvas.
+- [ ] **Pinned Messages & Pinned Query Banner**:
+  - A collapsible, pinned announcement bar at the top of the chat area for critical SOPs, shift notices, and lead contact numbers.
+- [ ] **Rich Audio Waveform Spectrum**:
+  - True frequency-sampled audio visualizer with click-to-seek playback scrubbers.
+- [ ] **Global Command Palette (`Ctrl/Cmd + K`)**:
+  - Fast keyboard-first search modal allowing instant navigation to any of the 22 departments, 25 query rooms, or staff members.
+- [ ] **Custom Enterprise Reaction Picker**:
+  - WhatsApp-style emoji reaction picker with haptic feel, skin tone selection, and custom industrial emoji indicators (e.g. ⚠️ `Safety Alert`, 🔧 `Tool Changed`, 🧪 `Lab Verified`).
+
+### 3. ⚡ UX, Performance & Enterprise Architecture
+- [ ] **Progressive Web App (PWA) & Offline Sync**:
+  - Full service-worker caching with background sync so operators in low-connectivity shopfloor basements can read and queue messages via IndexedDB.
+- [ ] **Message Stream Virtualization**:
+  - Virtualized message list using `@tanstack/react-virtual` or `react-window` to guarantee 60fps rendering even with 100,000+ message enterprise archives.
+- [ ] **End-to-End Encryption (E2EE)**:
+  - Cryptographic client-side encryption using Web Crypto API and Signal Double Ratchet Protocol for sensitive proprietary tooling CAD specs and commercial pricing discussions.
+- [ ] **Multi-Language Localization (i18n)**:
+  - Internationalization for global manufacturing plants (English, Hindi, German, Japanese, Mandarin, Spanish).
+- [ ] **Mobile Haptic Feedback**:
+  - Vibration haptics on swipe-to-reply trigger, audio record start/stop, and message long-press.
+
+---
+
 ## 🤝 Calling Developers Worldwide — Join the Project!
 
 We believe the future of industrial manufacturing and enterprise collaboration belongs to **open, intuitive, and high-performance developer-driven tools**.
 
 Whether you specialize in frontend UI/UX, real-time backend systems, machine telemetry protocols, or enterprise integrations, **your contributions are warmly welcomed!**
-
-### Areas Where You Can Contribute:
-- [ ] **Backend WebSockets & Persistence**: Real-time Node.js / Go / Rust backend adapters with PostgreSQL or Redis persistence.
-- [ ] **WebRTC Audio & Video Calling**: One-on-one and group voice/video calls directly from the header.
-- [ ] **SAP S/4HANA & MES Webhook Connectors**: Pre-built integration templates for industrial ERP platforms.
-- [ ] **MQTT / SCADA Telemetry Streamers**: Real-time sensor telemetry widgets embedded directly inside query messages.
-- [ ] **PWA & Offline-First Sync**: Full offline capability with IndexedDB message queues and service workers.
-- [ ] **Accessibility (a11y) & Internationalization (i18n)**: Multilingual support for global manufacturing plants.
 
 ### How to Contribute:
 1. **Fork** the repository.
@@ -153,3 +190,4 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 ---
 
 *Engineered with precision for the next generation of industrial collaboration.*
+

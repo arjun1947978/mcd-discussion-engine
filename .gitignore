@@ -29,3 +29,4 @@ playwright-report/
 # Ignore internal specification markdown files (preserve only README.md for GitHub)
 *.md
 !README.md
+

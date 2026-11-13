@@ -107,8 +107,9 @@ export const ChatFooter = ({
   onSendAudio,
   members = []
 }) => {
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showAttachment, setShowAttachment] = useState(false);
+  const [activeDrawer, setActiveDrawer] = useState(null); // 'emoji' | 'attachment' | null
+  const showEmojiPicker = activeDrawer === 'emoji';
+  const showAttachment = activeDrawer === 'attachment';
   const [showMention, setShowMention] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -120,6 +121,29 @@ export const ChatFooter = ({
   const savedRange = useRef(null);
   const typedAt = useRef(false);
   const recordTimerRef = useRef(null);
+
+  // Auto-focus on chat entry: immediately ready on desktop, caret placed on mobile
+  useEffect(() => {
+    const isMobile = isMobileDevice();
+    const el = editorRef.current;
+    if (!el) return;
+
+    if (!isMobile) {
+      // Desktop: instant focus so user can start typing immediately
+      el.focus();
+    } else {
+      // Mobile: set selection caret inside editor without popping virtual keyboard
+      const sel = window.getSelection();
+      if (sel) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        savedRange.current = range.cloneRange();
+      }
+    }
+  }, []);
 
   /* Track caret + active formats */
   useEffect(() => {
@@ -233,7 +257,7 @@ export const ChatFooter = ({
     el.innerHTML = '';
     setHasContent(false);
     if (setInputText) setInputText('');
-    setShowEmojiPicker(false);
+    setActiveDrawer(null);
     setShowMention(false);
 
     // Keep mobile on-screen keyboard open and re-focus editor immediately
@@ -382,16 +406,16 @@ export const ChatFooter = ({
 
   const handleToggleEmoji = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (showEmojiPicker) {
-      // User tapped the Keyboard icon: close emoji picker and bring up virtual keyboard!
-      setShowEmojiPicker(false);
+    if (activeDrawer === 'emoji') {
+      // User tapped Keyboard icon: close emoji drawer and bring up virtual keyboard!
+      setActiveDrawer(null);
       requestAnimationFrame(() => {
         if (editorRef.current) {
           editorRef.current.focus();
         }
       });
     } else {
-      // User tapped the Smiley icon: close virtual keyboard and open emoji drawer at bottom!
+      // User tapped Smiley icon: close virtual keyboard and open emoji drawer at bottom!
       const sel = window.getSelection();
       if (sel && sel.rangeCount > 0 && editorRef.current && editorRef.current.contains(sel.anchorNode)) {
         savedRange.current = sel.getRangeAt(0).cloneRange();
@@ -399,31 +423,35 @@ export const ChatFooter = ({
       if (editorRef.current) {
         editorRef.current.blur();
       }
-      setShowEmojiPicker(true);
-      setShowAttachment(false);
+      setActiveDrawer('emoji');
       setShowMention(false);
     }
   };
 
   const handleToggleAttachment = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (showAttachment) {
-      setShowAttachment(false);
+    if (activeDrawer === 'attachment') {
+      setActiveDrawer(null);
     } else {
       if (editorRef.current) {
         editorRef.current.blur();
       }
-      setShowAttachment(true);
-      setShowEmojiPicker(false);
+      setActiveDrawer('attachment');
       setShowMention(false);
     }
+  };
+
+  const handleEmojiBackspace = () => {
+    const el = editorRef.current;
+    if (!el) return;
+    document.execCommand('delete', false, null);
+    syncContent();
   };
 
   const openMentionFromButton = () => {
     typedAt.current = false;
     setShowMention((p) => !p);
-    setShowEmojiPicker(false);
-    setShowAttachment(false);
+    setActiveDrawer(null);
   };
 
   const getExistingMentions = () => {
@@ -559,7 +587,7 @@ export const ChatFooter = ({
       )}
 
       {!isRecording && (
-        <div className={`mcd-format-toolbar ${focused || showMention || hasContent ? 'mcd-tb-visible' : ''}`}>
+        <div className="mcd-format-toolbar mcd-tb-visible">
           {tbBtn('Bold (Ctrl+B)', fmt.b, () => exec('bold'), <Bold size={15} />)}
           {tbBtn('Italic (Ctrl+I)', fmt.i, () => exec('italic'), <Italic size={15} />)}
           {tbBtn('Underline (Ctrl+U)', fmt.u, () => exec('underline'), <Underline size={15} />)}
@@ -629,8 +657,7 @@ export const ChatFooter = ({
                   onPaste={handlePaste}
                   onFocus={() => {
                     setFocused(true);
-                    setShowEmojiPicker(false);
-                    setShowAttachment(false);
+                    setActiveDrawer(null);
                   }}
                   onBlur={() => setFocused(false)}
                 />
@@ -677,18 +704,21 @@ export const ChatFooter = ({
         )}
       </div>
 
-      {/* WhatsApp Bottom Drawers (Positioned below input bar, replacing the keypad on mobile) */}
-      <EmojiPickerModal
-        isOpen={showEmojiPicker}
-        onClose={() => setShowEmojiPicker(false)}
-        onSelectEmoji={handleSelectEmoji}
-      />
+      {/* WhatsApp Bottom Drawers Shelf with smooth transition (No jitter / flicker) */}
+      <div className={`wa-drawer-shelf ${activeDrawer ? 'wa-drawer-open' : ''}`}>
+        <EmojiPickerModal
+          isOpen={showEmojiPicker}
+          onClose={() => setActiveDrawer(null)}
+          onSelectEmoji={handleSelectEmoji}
+          onBackspace={handleEmojiBackspace}
+        />
 
-      <AttachmentModal
-        isOpen={showAttachment}
-        onClose={() => setShowAttachment(false)}
-        onSelectOption={handleAttachmentOption}
-      />
+        <AttachmentModal
+          isOpen={showAttachment}
+          onClose={() => setActiveDrawer(null)}
+          onSelectOption={handleAttachmentOption}
+        />
+      </div>
     </div>
   );
 };

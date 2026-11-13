@@ -2653,18 +2653,23 @@ ol.mcd-rich-list { list-style: decimal; }
 
 .wa-camera-btn { display: none; }
 
-/* Formatting toolbar: slides in only while typing */
+/* Formatting toolbar: always visible and ready from chat entrance */
 .mcd-format-toolbar {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  padding-top: 0;
-  transition: max-height 0.22s ease, opacity 0.2s ease, padding 0.22s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 4px;
+  background-color: var(--wa-input-bar-bg);
+  border-bottom: 1px solid var(--wa-border);
+  max-height: 42px;
+  opacity: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  transition: all 0.2s ease;
 }
 .mcd-format-toolbar.mcd-tb-visible {
-  max-height: 40px;
+  max-height: 42px;
   opacity: 1;
-  padding-top: 6px;
 }
 
 /* Attachment popup (desktop popover menu) */
@@ -2740,6 +2745,19 @@ ol.mcd-rich-list { list-style: decimal; }
   .wa-editor-wrap { order: 2; }
   .wa-camera-btn { display: flex; order: 4; }
 
+  /* WhatsApp Drawer Shelf (Hardware-accelerated height transition: Zero Jitter / Flicker) */
+  .wa-drawer-shelf {
+    height: 0;
+    overflow: hidden;
+    transition: height 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
+    will-change: height;
+    background-color: var(--wa-menu-bg);
+  }
+
+  .wa-drawer-shelf.wa-drawer-open {
+    height: 350px;
+  }
+
   /* WhatsApp Mobile Emoji Drawer: Sits BELOW input bar, replacing the keypad */
   .wa-emoji-picker-container.wa-wa-emoji,
   .wa-emoji-picker-container {
@@ -2750,8 +2768,8 @@ ol.mcd-rich-list { list-style: decimal; }
     margin-bottom: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: 290px !important;
-    max-height: 42vh !important;
+    height: 350px !important;
+    max-height: 48vh !important;
     border-radius: 0 !important;
     border: none !important;
     border-top: 1px solid var(--wa-border) !important;
@@ -2770,12 +2788,13 @@ ol.mcd-rich-list { list-style: decimal; }
     margin-bottom: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    height: 350px !important;
     border-radius: 0 !important;
     border: none !important;
     border-top: 1px solid var(--wa-border) !important;
     box-shadow: none !important;
     background-color: var(--wa-menu-bg) !important;
-    padding: 18px 14px 22px !important;
+    padding: 24px 18px 24px !important;
     transform: none !important;
     z-index: 10 !important;
   }
@@ -2783,7 +2802,7 @@ ol.mcd-rich-list { list-style: decimal; }
   .wa-attach-items-container {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 16px 8px !important;
+    gap: 20px 12px !important;
     width: 100% !important;
   }
 
@@ -2793,19 +2812,19 @@ ol.mcd-rich-list { list-style: decimal; }
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    padding: 8px 4px !important;
+    padding: 10px 4px !important;
     gap: 8px !important;
     border-radius: 14px !important;
   }
 
   .wa-attach-ico {
-    width: 52px !important;
-    height: 52px !important;
+    width: 58px !important;
+    height: 58px !important;
     border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1) !important;
   }
 
   .wa-attach-label {
@@ -3012,11 +3031,11 @@ ol.mcd-rich-list { list-style: decimal; }
   bottom: 100%;
   left: 12px;
   margin-bottom: 8px;
-  width: 356px;
-  max-width: calc(100vw - 24px);
-  height: 360px;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  height: 460px;
   border-radius: 16px;
-  box-shadow: 0 8px 28px rgba(11, 20, 26, 0.22);
+  box-shadow: 0 12px 40px rgba(11, 20, 26, 0.28);
   transform-origin: bottom left;
   animation: none;
 }
@@ -3128,14 +3147,21 @@ ol.mcd-rich-list { list-style: decimal; }
 .wa-emoji-grid-8 {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 2px;
+  gap: 3px;
+  padding: 4px 6px 20px;
+}
+@media (min-width: 769px) {
+  .wa-emoji-grid-8 {
+    grid-template-columns: repeat(9, 1fr);
+    gap: 5px;
+  }
 }
 
 .wa-emoji-cell {
   background: none;
   border: none;
-  font-size: 1.4rem;
-  height: 38px;
+  font-size: 1.65rem;
+  height: 44px;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
@@ -3147,11 +3173,35 @@ ol.mcd-rich-list { list-style: decimal; }
 
 .wa-emoji-cell:hover {
   background-color: var(--wa-hover-bg);
-  transform: scale(1.12);
+  transform: scale(1.18);
 }
 
 .wa-emoji-cell:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
+}
+
+/* WhatsApp Mobile Floating Backspace Button */
+.wa-emoji-backspace-float {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--wa-header-bg);
+  color: var(--wa-text-primary);
+  border: 1px solid var(--wa-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 25;
+  transition: transform 0.12s ease, background-color 0.15s ease;
+}
+.wa-emoji-backspace-float:active {
+  transform: scale(0.88);
+  background-color: var(--wa-hover-bg);
 }
 
 

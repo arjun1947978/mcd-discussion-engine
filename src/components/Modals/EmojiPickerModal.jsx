@@ -9,7 +9,8 @@ import {
   Trophy,
   Car,
   Lightbulb,
-  Heart
+  Heart,
+  Delete
 } from 'lucide-react';
 import { EMOJI_CATEGORIES, EMOJI_KEYWORDS } from '../../data/emojiData';
 
@@ -26,7 +27,7 @@ const TAB_ICONS = {
 
 const RECENT_KEY = 'mcd_recent_emojis';
 
-export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji }) => {
+export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji, onBackspace }) => {
   const [activeCategory, setActiveCategory] = useState('recent');
   const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(isOpen);
@@ -249,6 +250,24 @@ export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji }) => {
           ))
         )}
       </div>
+
+      {/* WhatsApp Quick Backspace Button (Floating bottom right) */}
+      {onBackspace && (
+        <button
+          type="button"
+          className="wa-emoji-backspace-float"
+          onMouseDown={(e) => e.preventDefault()}
+          onPointerDown={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onBackspace();
+          }}
+          title="Backspace"
+        >
+          <Delete size={20} />
+        </button>
+      )}
     </div>
   );
 };

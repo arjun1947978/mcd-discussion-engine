@@ -62,7 +62,7 @@ Standard enterprise chat software is rigid, disconnected from machine telemetry,
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/vaibhavchoudhary716/mcd-discussion-engine.git
+git clone https://github.com/arjun1947978/mcd-discussion-engine.git
 
 # 2. Navigate to project root
 cd mcd-discussion-engine
@@ -179,7 +179,7 @@ Whether you specialize in frontend UI/UX, real-time backend systems, machine tel
 4. Push to the branch (`git push origin feature/amazing-feature`).
 5. Open a **Pull Request** and describe your enhancements!
 
-Feel free to open an [Issue](https://github.com/vaibhavchoudhary716/mcd-discussion-engine/issues) to discuss ideas, feature requests, or report bugs.
+Feel free to open an [Issue](https://github.com/arjun1947978/mcd-discussion-engine/issues) to discuss ideas, feature requests, or report bugs.
 
 ---
 

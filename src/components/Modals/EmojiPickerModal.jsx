@@ -54,9 +54,10 @@ export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji, onBackspace }
     return () => clearTimeout(t);
   }, [isOpen]);
 
-  // Close when clicking outside (ignore emoji toggle button)
+  // Close when clicking outside (ignore clicks inside footer wrapper and toggle buttons)
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (e.target.closest && e.target.closest('.wa-footer-wrapper')) return;
       if (e.target.closest && e.target.closest('[data-emoji-toggle]')) return;
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         onClose();
@@ -64,7 +65,7 @@ export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji, onBackspace }
     };
     if (isOpen) {
       window.addEventListener('mousedown', handleClickOutside);
-      window.addEventListener('touchstart', handleClickOutside);
+      window.addEventListener('touchstart', handleClickOutside, { passive: true });
     }
     return () => {
       window.removeEventListener('mousedown', handleClickOutside);

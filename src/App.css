@@ -65,19 +65,13 @@
 
 /* Base Layout */
 .wa-app-root {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   height: 100dvh;
-  height: var(--app-viewport-height, 100dvh);
-  max-height: var(--app-viewport-height, 100dvh);
   margin: 0;
   padding: 0;
   overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
   background-color: var(--wa-header-bg);
   color: var(--wa-text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -2754,17 +2748,13 @@ ol.mcd-rich-list { list-style: decimal; }
   .wa-drawer-shelf {
     height: 0;
     overflow: hidden;
-    transition: height 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
-    will-change: height;
+    transition: height 0.22s cubic-bezier(0.2, 0.9, 0.2, 1);
     background-color: var(--wa-menu-bg);
   }
 
   .wa-drawer-shelf.wa-drawer-open {
-    height: var(--wa-keyboard-height, 330px);
-  }
-
-  .wa-drawer-shelf.wa-no-anim {
-    transition: none !important;
+    height: 300px;
+    max-height: 44vh;
   }
 
   /* WhatsApp Mobile Emoji Drawer: Sits BELOW input bar, replacing the keypad */
@@ -2777,8 +2767,8 @@ ol.mcd-rich-list { list-style: decimal; }
     margin-bottom: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: var(--wa-keyboard-height, 330px) !important;
-    max-height: 48vh !important;
+    height: 300px !important;
+    max-height: 44vh !important;
     border-radius: 0 !important;
     border: none !important;
     border-top: 1px solid var(--wa-border) !important;
@@ -2797,7 +2787,8 @@ ol.mcd-rich-list { list-style: decimal; }
     margin-bottom: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: var(--wa-keyboard-height, 330px) !important;
+    height: 300px !important;
+    max-height: 44vh !important;
     border-radius: 0 !important;
     border: none !important;
     border-top: 1px solid var(--wa-border) !important;

@@ -182,8 +182,6 @@ export const ChatFooter = ({
   members = []
 }) => {
   const [activeDrawer, setActiveDrawer] = useState(null); // 'emoji' | 'attachment' | null
-  const [instantDrawer, setInstantDrawer] = useState(false);
-  const [isSwappingToKeyboard, setIsSwappingToKeyboard] = useState(false);
   const showEmojiPicker = activeDrawer === 'emoji';
   const showAttachment = activeDrawer === 'attachment';
   const [showMention, setShowMention] = useState(false);
@@ -198,20 +196,15 @@ export const ChatFooter = ({
   const typedAt = useRef(false);
   const recordTimerRef = useRef(null);
 
-  // Auto-focus on chat entry: immediately ready on desktop, caret placed and BLINKING on mobile
+  // Auto-focus on chat entry: desktop focuses immediately, mobile places caret without opening virtual keyboard
   useEffect(() => {
     const isMobile = isMobileDevice();
     const el = editorRef.current;
     if (!el) return;
 
     if (!isMobile) {
-      // Desktop: instant focus so user can start typing immediately
       el.focus();
     } else {
-      // Mobile: set inputmode="none" so virtual keyboard does NOT pop up,
-      // but focus el so caret BLINKS visibly in the typing box!
-      el.setAttribute('inputmode', 'none');
-      el.focus({ preventScroll: true });
       const sel = window.getSelection();
       if (sel) {
         const range = document.createRange();
@@ -223,52 +216,6 @@ export const ChatFooter = ({
       }
     }
   }, []);
-
-  // WhatsApp-Style Smooth Zero-Jitter Swap: Drawer -> Keyboard
-  const switchToKeyboard = useCallback(() => {
-    const el = editorRef.current;
-    if (el) {
-      el.setAttribute('inputmode', 'text');
-      el.focus();
-    }
-
-    if (isMobileDevice() && activeDrawer) {
-      // Keep drawer locked in place while the keyboard rises so typing box never drops!
-      setIsSwappingToKeyboard(true);
-
-      const onViewportResize = () => {
-        const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        const diff = window.innerHeight - vh;
-        if (diff > 140) {
-          // Keyboard has risen and is now occupying the bottom space!
-          setInstantDrawer(true);
-          setActiveDrawer(null);
-          setIsSwappingToKeyboard(false);
-          setTimeout(() => setInstantDrawer(false), 60);
-          if (window.visualViewport) {
-            window.visualViewport.removeEventListener('resize', onViewportResize);
-          }
-        }
-      };
-
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', onViewportResize);
-      }
-
-      // Safety timeout: dismiss after 320ms in case resize event isn't supported / instantaneous
-      setTimeout(() => {
-        setInstantDrawer(true);
-        setActiveDrawer(null);
-        setIsSwappingToKeyboard(false);
-        setTimeout(() => setInstantDrawer(false), 60);
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', onViewportResize);
-        }
-      }, 320);
-    } else {
-      setActiveDrawer(null);
-    }
-  }, [activeDrawer]);
 
   /* Track caret + active formats */
   useEffect(() => {
@@ -485,11 +432,7 @@ export const ChatFooter = ({
 
     const isMobile = isMobileDevice();
 
-    if (isMobile) {
-      // Keep inputmode="none" so caret BLINKS actively without opening virtual keyboard
-      el.setAttribute('inputmode', 'none');
-      el.focus({ preventScroll: true });
-    } else {
+    if (!isMobile) {
       el.focus();
       restoreSelection();
     }
@@ -535,29 +478,22 @@ export const ChatFooter = ({
   const handleToggleEmoji = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (activeDrawer === 'emoji') {
-      // User tapped Keyboard icon: switch smoothly to virtual keyboard
-      switchToKeyboard();
+      // User tapped Keyboard button: close emoji drawer and bring up virtual keyboard!
+      setActiveDrawer(null);
+      requestAnimationFrame(() => {
+        if (editorRef.current) {
+          editorRef.current.focus();
+        }
+      });
     } else {
-      // User tapped Smiley icon: switch smoothly to emoji drawer
-      const isMobile = isMobileDevice();
-      const isKeyboardOpen = window.visualViewport && (window.innerHeight - window.visualViewport.height > 140);
-
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0 && editorRef.current && editorRef.current.contains(sel.anchorNode)) {
-        savedRange.current = sel.getRangeAt(0).cloneRange();
+      // User tapped Smiley button: blur editor to dismiss mobile virtual keyboard cleanly!
+      if (editorRef.current) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && editorRef.current.contains(sel.anchorNode)) {
+          savedRange.current = sel.getRangeAt(0).cloneRange();
+        }
+        editorRef.current.blur();
       }
-
-      if (isMobile && editorRef.current) {
-        editorRef.current.setAttribute('inputmode', 'none');
-        editorRef.current.focus({ preventScroll: true });
-      }
-
-      // If keyboard was currently up, open drawer instantly (no bounce/jitter)
-      if (isKeyboardOpen) {
-        setInstantDrawer(true);
-        setTimeout(() => setInstantDrawer(false), 80);
-      }
-
       setActiveDrawer('emoji');
       setShowMention(false);
     }
@@ -568,19 +504,9 @@ export const ChatFooter = ({
     if (activeDrawer === 'attachment') {
       setActiveDrawer(null);
     } else {
-      const isMobile = isMobileDevice();
-      const isKeyboardOpen = window.visualViewport && (window.innerHeight - window.visualViewport.height > 140);
-
-      if (isMobile && editorRef.current) {
-        editorRef.current.setAttribute('inputmode', 'none');
-        editorRef.current.focus({ preventScroll: true });
+      if (editorRef.current) {
+        editorRef.current.blur();
       }
-
-      if (isKeyboardOpen) {
-        setInstantDrawer(true);
-        setTimeout(() => setInstantDrawer(false), 80);
-      }
-
       setActiveDrawer('attachment');
       setShowMention(false);
     }
@@ -590,11 +516,7 @@ export const ChatFooter = ({
     const el = editorRef.current;
     if (!el) return;
 
-    const isMobile = isMobileDevice();
-    if (isMobile) {
-      el.setAttribute('inputmode', 'none');
-      el.focus({ preventScroll: true });
-    } else {
+    if (!isMobileDevice()) {
       el.focus();
     }
 
@@ -840,18 +762,9 @@ export const ChatFooter = ({
                   onInput={handleInput}
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
-                  onPointerDown={() => {
-                    if (activeDrawer) {
-                      switchToKeyboard();
-                    } else if (editorRef.current) {
-                      editorRef.current.setAttribute('inputmode', 'text');
-                    }
-                  }}
                   onFocus={() => {
                     setFocused(true);
-                    if (!isSwappingToKeyboard && activeDrawer) {
-                      switchToKeyboard();
-                    }
+                    setActiveDrawer(null);
                   }}
                   onBlur={() => setFocused(false)}
                 />
@@ -899,16 +812,16 @@ export const ChatFooter = ({
       </div>
 
       {/* WhatsApp Bottom Drawers Shelf with smooth transition (No jitter / flicker) */}
-      <div className={`wa-drawer-shelf ${activeDrawer || isSwappingToKeyboard ? 'wa-drawer-open' : ''} ${instantDrawer ? 'wa-no-anim' : ''}`}>
+      <div className={`wa-drawer-shelf ${activeDrawer ? 'wa-drawer-open' : ''}`}>
         <EmojiPickerModal
-          isOpen={showEmojiPicker || (isSwappingToKeyboard && activeDrawer === 'emoji')}
+          isOpen={showEmojiPicker}
           onClose={() => setActiveDrawer(null)}
           onSelectEmoji={handleSelectEmoji}
           onBackspace={handleEmojiBackspace}
         />
 
         <AttachmentModal
-          isOpen={showAttachment || (isSwappingToKeyboard && activeDrawer === 'attachment')}
+          isOpen={showAttachment}
           onClose={() => setActiveDrawer(null)}
           onSelectOption={handleAttachmentOption}
         />

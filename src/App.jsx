@@ -265,27 +265,43 @@ export function App() {
   const [mediaModal, setMediaModal] = useState(null);
   const [toast, setToast] = useState(null);
 
+  // Responsive helper: Checks if device is in mobile mode (portrait OR landscape mobile)
+  const isMobileScreen = () => {
+    if (typeof window === 'undefined') return false;
+    const isNarrow = window.innerWidth <= 768;
+    const isLandscapeMobile = window.innerHeight <= 560 && window.innerWidth <= 1024;
+    const isTouchMobile =
+      (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0 && window.innerHeight <= 600) ||
+      (window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches && window.innerHeight <= 600);
+    return isNarrow || isLandscapeMobile || isTouchMobile;
+  };
+
   // Mobile view state: 'sidebar' | 'chat'
   const [mobileView, setMobileView] = useState(() => {
-    return typeof window !== 'undefined' && window.innerWidth <= 768 ? 'sidebar' : 'chat';
+    return isMobileScreen() ? 'sidebar' : 'chat';
   });
 
-  // Listen for window resize
+  // Listen for window resize & orientation change
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768) {
+      const isMobile = isMobileScreen();
+      if (!isMobile) {
         setMobileView('chat');
       } else if (!activeRoomId) {
         setMobileView('sidebar');
       }
     };
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, [activeRoomId]);
 
   // When room is closed on mobile or window switches to mobile without active room, auto-switch to sidebar
   useEffect(() => {
-    if (!activeRoomId && typeof window !== 'undefined' && window.innerWidth <= 768) {
+    if (!activeRoomId && isMobileScreen()) {
       setMobileView('sidebar');
     }
   }, [activeRoomId]);
@@ -377,10 +393,18 @@ export function App() {
   // Close / Back button clicked
   // Works on BOTH desktop (closes current open chat) and mobile (goes back to list)
   const handleCloseRoom = () => {
-    if (window.innerWidth <= 768) {
+    if (isMobileScreen()) {
       setMobileView('sidebar');
     } else {
       setActiveRoomId(null);
+    }
+  };
+
+  const handleOpenMembersModalOrPanel = () => {
+    if (isMobileScreen()) {
+      setMobileMembersModal(true);
+    } else {
+      setShowMembersPanel((prev) => !prev);
     }
   };
 
@@ -618,13 +642,7 @@ export function App() {
                 theme={theme}
                 onToggleTheme={handleToggleTheme}
                 onBack={handleCloseRoom}
-                onOpenMembers={() => {
-                  if (window.innerWidth <= 768) {
-                    setMobileMembersModal(true);
-                  } else {
-                    setShowMembersPanel((prev) => !prev);
-                  }
-                }}
+                onOpenMembers={handleOpenMembersModalOrPanel}
                 onClearChat={handleClearChat}
               />
 
@@ -668,13 +686,7 @@ export function App() {
               activeTab={sidebarTab}
               onTabChange={setSidebarTab}
               queryRoomsList={queryRoomsList}
-              onToggleMembers={() => {
-                if (window.innerWidth <= 768) {
-                  setMobileMembersModal(true);
-                } else {
-                  setShowMembersPanel((prev) => !prev);
-                }
-              }}
+              onToggleMembers={handleOpenMembersModalOrPanel}
               onSelectDepartment={(deptId, deptData) =>
                 handleSelectRoom(deptId, 'department', deptData)
               }

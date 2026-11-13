@@ -21,7 +21,7 @@ const hash = (s = '') =>
 
 const isMobileDevice = () =>
   /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
-  (navigator.maxTouchPoints > 0 && window.innerWidth <= 768);
+  (navigator.maxTouchPoints > 0 && (window.innerWidth <= 1024 || window.innerHeight <= 560));
 
 const copyText = async (text) => {
   try {

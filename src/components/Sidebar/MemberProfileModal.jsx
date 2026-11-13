@@ -298,9 +298,8 @@ export const MemberProfileModal = ({ member, roomContext, onClose }) => {
             Zero layout thrashing, zero reflow, 100% butter-smooth.
             ============================================================== */}
         <div
-          className={`mcd-sticky-top-bar ${
-            isScrolled ? 'is-docked' : 'is-transparent'
-          }`}
+          className={`mcd-sticky-top-bar ${isScrolled ? 'is-docked' : 'is-transparent'
+            }`}
         >
           {/* Docked Circle Avatar & Name (Slides in smoothly when scrolled) */}
           <div className="mcd-sticky-docked-content">
@@ -312,9 +311,8 @@ export const MemberProfileModal = ({ member, roomContext, onClose }) => {
                 onError={() => setImgError(true)}
               />
               <span
-                className={`mcd-circle-dot ${
-                  isOnline ? 'is-online' : 'is-offline'
-                }`}
+                className={`mcd-circle-dot ${isOnline ? 'is-online' : 'is-offline'
+                  }`}
               />
             </div>
             <div className="mcd-sticky-docked-info min-w-0 flex-1">
@@ -328,9 +326,8 @@ export const MemberProfileModal = ({ member, roomContext, onClose }) => {
           {/* Close Button */}
           <button
             type="button"
-            className={`mcd-modal-close-btn ${
-              isScrolled ? 'is-docked-btn' : 'is-floating-btn'
-            }`}
+            className={`mcd-modal-close-btn ${isScrolled ? 'is-docked-btn' : 'is-floating-btn'
+              }`}
             onClick={onClose}
             title="Close profile"
           >
@@ -513,9 +510,8 @@ export const MemberProfileModal = ({ member, roomContext, onClose }) => {
                   return (
                     <div
                       key={q.id}
-                      className={`mcd-bar-card ${
-                        isActive ? 'is-query-active' : 'is-query-inactive'
-                      }`}
+                      className={`mcd-bar-card ${isActive ? 'is-query-active' : 'is-query-inactive'
+                        }`}
                       style={{
                         '--bar-color': colors.barColor,
                         '--bg-light': colors.bgLight,
@@ -541,9 +537,8 @@ export const MemberProfileModal = ({ member, roomContext, onClose }) => {
                           </div>
 
                           <span
-                            className={`mcd-query-state-badge ${
-                              isActive ? 'badge-active' : 'badge-inactive'
-                            }`}
+                            className={`mcd-query-state-badge ${isActive ? 'badge-active' : 'badge-inactive'
+                              }`}
                           >
                             {isActive ? (
                               <span className="mcd-active-dot" />

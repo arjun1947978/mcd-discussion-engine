@@ -146,6 +146,7 @@ export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji }) => {
               key={cat.id}
               type="button"
               className={`wa-emoji-tab-btn ${active ? 'is-active' : ''}`}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 setSearchQuery('');
                 scrollToCategory(cat.id);
@@ -194,7 +195,13 @@ export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji }) => {
                     key={`${emoji}-${idx}`}
                     type="button"
                     className="wa-emoji-cell"
-                    onClick={() => handlePick(emoji)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handlePick(emoji);
+                    }}
                   >
                     {emoji}
                   </button>
@@ -220,7 +227,13 @@ export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji }) => {
                     key={`${cat.id}-${emoji}-${idx}`}
                     type="button"
                     className="wa-emoji-cell"
-                    onClick={() => handlePick(emoji)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handlePick(emoji);
+                    }}
                   >
                     {emoji}
                   </button>

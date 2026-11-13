@@ -306,6 +306,40 @@ export function App() {
     }
   }, [activeRoomId]);
 
+  // Mobile virtual keyboard viewport & scroll locking (prevents chat header from scrolling off-screen)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const lockWindowScroll = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    const handleVisualViewport = () => {
+      if (window.visualViewport) {
+        const vh = window.visualViewport.height;
+        document.documentElement.style.setProperty('--app-viewport-height', `${vh}px`);
+      }
+      lockWindowScroll();
+    };
+
+    window.addEventListener('scroll', lockWindowScroll);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleVisualViewport);
+      window.visualViewport.addEventListener('scroll', handleVisualViewport);
+      handleVisualViewport();
+    }
+
+    return () => {
+      window.removeEventListener('scroll', lockWindowScroll);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleVisualViewport);
+        window.visualViewport.removeEventListener('scroll', handleVisualViewport);
+      }
+    };
+  }, []);
+
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
   };

@@ -212,7 +212,18 @@ export const ChatFooter = ({
     return false;
   };
 
-  const handleSend = () => {
+  const isMobileDevice = () => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.innerWidth <= 768 ||
+      (window.innerHeight <= 560 && window.innerWidth <= 1024) ||
+      (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ||
+      (window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches)
+    );
+  };
+
+  const handleSend = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     const el = editorRef.current;
     if (!el) return;
     const text = serializeEditor(el);
@@ -223,6 +234,22 @@ export const ChatFooter = ({
     if (setInputText) setInputText('');
     setShowEmojiPicker(false);
     setShowMention(false);
+
+    // Keep mobile on-screen keyboard open and re-focus editor immediately
+    requestAnimationFrame(() => {
+      if (editorRef.current) {
+        editorRef.current.focus();
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(editorRef.current);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          savedRange.current = range.cloneRange();
+        }
+      }
+    });
   };
 
   const tryExitList = () => {
@@ -250,6 +277,18 @@ export const ChatFooter = ({
       return;
     }
     if (e.key === 'Enter') {
+      // On mobile / touch devices: Enter key ALWAYS inserts a new line (never sends message)
+      if (isMobileDevice()) {
+        // Let native Enter insert newline or handle line break inside contentEditable
+        if (!isInList()) {
+          // Native Enter in contenteditable will create a newline / <div><br></div>
+          // Ensure it does not trigger send
+          return;
+        }
+        return;
+      }
+
+      // On desktop: plain Enter sends message, Shift+Enter makes a new line
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         handleSend();
@@ -291,8 +330,45 @@ export const ChatFooter = ({
   };
 
   const handleSelectEmoji = (emoji) => {
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
     restoreSelection();
-    document.execCommand('insertText', false, emoji);
+
+    let inserted = false;
+    try {
+      inserted = document.execCommand('insertText', false, emoji);
+    } catch (e) {
+      inserted = false;
+    }
+
+    if (!inserted) {
+      // Robust fallback for mobile WebKit / Android browsers where execCommand is blocked
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const textNode = document.createTextNode(emoji);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        savedRange.current = range.cloneRange();
+      } else {
+        const textNode = document.createTextNode(emoji);
+        el.appendChild(textNode);
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const sel = window.getSelection();
+        if (sel) {
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        savedRange.current = range.cloneRange();
+      }
+    }
     syncContent();
   };
 
@@ -540,11 +616,27 @@ export const ChatFooter = ({
             </div>
 
             {hasContent ? (
-              <button key="send" type="button" className="wa-send-btn wa-pop" onClick={handleSend} title="Send (Enter)">
+              <button
+                key="send"
+                type="button"
+                className="wa-send-btn wa-pop"
+                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={handleSend}
+                title="Send"
+              >
                 <Send size={20} />
               </button>
             ) : (
-              <button key="mic" type="button" className="wa-send-btn wa-mic-btn wa-pop" onClick={() => setIsRecording(true)} title="Voice message">
+              <button
+                key="mic"
+                type="button"
+                className="wa-send-btn wa-mic-btn wa-pop"
+                onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => setIsRecording(true)}
+                title="Voice message"
+              >
                 <Mic size={22} />
               </button>
             )}

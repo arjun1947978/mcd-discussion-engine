@@ -320,6 +320,10 @@ export function App() {
       if (window.visualViewport) {
         const vh = window.visualViewport.height;
         document.documentElement.style.setProperty('--app-viewport-height', `${vh}px`);
+        const kbdHeight = window.innerHeight - vh;
+        if (kbdHeight > 140) {
+          document.documentElement.style.setProperty('--wa-keyboard-height', `${kbdHeight}px`);
+        }
       }
       lockWindowScroll();
     };

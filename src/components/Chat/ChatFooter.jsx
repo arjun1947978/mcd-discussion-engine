@@ -97,6 +97,80 @@ export const serializeEditor = (root) => {
     .trim();
 };
 
+/* Programmatically deletes the single preceding character or unicode emoji/grapheme cluster */
+const deleteGraphemeBeforeCaret = (el, range) => {
+  if (!el || !el.hasChildNodes()) return;
+
+  if (range && el.contains(range.startContainer)) {
+    const sc = range.startContainer;
+    const offset = range.startOffset;
+
+    if (sc.nodeType === 3 && offset > 0) {
+      const text = sc.nodeValue;
+      const before = text.slice(0, offset);
+      const after = text.slice(offset);
+
+      let segments;
+      if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+        segments = Array.from(seg.segment(before)).map((s) => s.segment);
+      } else {
+        segments = Array.from(before);
+      }
+
+      segments.pop(); // remove last character / emoji
+      const newBefore = segments.join('');
+      sc.nodeValue = newBefore + after;
+      if (sc.nodeValue.length === 0) {
+        sc.remove();
+      } else {
+        range.setStart(sc, newBefore.length);
+        range.collapse(true);
+      }
+      return;
+    } else if (sc.nodeType === 1 && offset > 0) {
+      const child = sc.childNodes[offset - 1];
+      if (child) {
+        child.remove();
+        return;
+      }
+    }
+  }
+
+  // Fallback: delete the last child or last grapheme from el
+  const findLastTextOrElement = (node) => {
+    if (!node) return null;
+    if (node.nodeType === 3 && node.nodeValue.length > 0) return node;
+    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+      const res = findLastTextOrElement(node.childNodes[i]);
+      if (res) return res;
+    }
+    return node;
+  };
+
+  const target = findLastTextOrElement(el);
+  if (target && target !== el) {
+    if (target.nodeType === 3) {
+      const text = target.nodeValue;
+      let segments;
+      if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+        segments = Array.from(seg.segment(text)).map((s) => s.segment);
+      } else {
+        segments = Array.from(text);
+      }
+      segments.pop();
+      if (segments.length === 0) {
+        target.remove();
+      } else {
+        target.nodeValue = segments.join('');
+      }
+    } else {
+      target.remove();
+    }
+  }
+};
+
 export const ChatFooter = ({
   inputText,
   setInputText,
@@ -108,6 +182,8 @@ export const ChatFooter = ({
   members = []
 }) => {
   const [activeDrawer, setActiveDrawer] = useState(null); // 'emoji' | 'attachment' | null
+  const [instantDrawer, setInstantDrawer] = useState(false);
+  const [isSwappingToKeyboard, setIsSwappingToKeyboard] = useState(false);
   const showEmojiPicker = activeDrawer === 'emoji';
   const showAttachment = activeDrawer === 'attachment';
   const [showMention, setShowMention] = useState(false);
@@ -122,7 +198,7 @@ export const ChatFooter = ({
   const typedAt = useRef(false);
   const recordTimerRef = useRef(null);
 
-  // Auto-focus on chat entry: immediately ready on desktop, caret placed on mobile
+  // Auto-focus on chat entry: immediately ready on desktop, caret placed and BLINKING on mobile
   useEffect(() => {
     const isMobile = isMobileDevice();
     const el = editorRef.current;
@@ -132,7 +208,10 @@ export const ChatFooter = ({
       // Desktop: instant focus so user can start typing immediately
       el.focus();
     } else {
-      // Mobile: set selection caret inside editor without popping virtual keyboard
+      // Mobile: set inputmode="none" so virtual keyboard does NOT pop up,
+      // but focus el so caret BLINKS visibly in the typing box!
+      el.setAttribute('inputmode', 'none');
+      el.focus({ preventScroll: true });
       const sel = window.getSelection();
       if (sel) {
         const range = document.createRange();
@@ -144,6 +223,52 @@ export const ChatFooter = ({
       }
     }
   }, []);
+
+  // WhatsApp-Style Smooth Zero-Jitter Swap: Drawer -> Keyboard
+  const switchToKeyboard = useCallback(() => {
+    const el = editorRef.current;
+    if (el) {
+      el.setAttribute('inputmode', 'text');
+      el.focus();
+    }
+
+    if (isMobileDevice() && activeDrawer) {
+      // Keep drawer locked in place while the keyboard rises so typing box never drops!
+      setIsSwappingToKeyboard(true);
+
+      const onViewportResize = () => {
+        const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const diff = window.innerHeight - vh;
+        if (diff > 140) {
+          // Keyboard has risen and is now occupying the bottom space!
+          setInstantDrawer(true);
+          setActiveDrawer(null);
+          setIsSwappingToKeyboard(false);
+          setTimeout(() => setInstantDrawer(false), 60);
+          if (window.visualViewport) {
+            window.visualViewport.removeEventListener('resize', onViewportResize);
+          }
+        }
+      };
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onViewportResize);
+      }
+
+      // Safety timeout: dismiss after 320ms in case resize event isn't supported / instantaneous
+      setTimeout(() => {
+        setInstantDrawer(true);
+        setActiveDrawer(null);
+        setIsSwappingToKeyboard(false);
+        setTimeout(() => setInstantDrawer(false), 60);
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', onViewportResize);
+        }
+      }, 320);
+    } else {
+      setActiveDrawer(null);
+    }
+  }, [activeDrawer]);
 
   /* Track caret + active formats */
   useEffect(() => {
@@ -360,8 +485,11 @@ export const ChatFooter = ({
 
     const isMobile = isMobileDevice();
 
-    // On desktop we focus editor; on mobile, DO NOT call el.focus() so virtual keypad does NOT pop up!
-    if (!isMobile) {
+    if (isMobile) {
+      // Keep inputmode="none" so caret BLINKS actively without opening virtual keyboard
+      el.setAttribute('inputmode', 'none');
+      el.focus({ preventScroll: true });
+    } else {
       el.focus();
       restoreSelection();
     }
@@ -395,7 +523,7 @@ export const ChatFooter = ({
       range.collapse(true);
 
       savedRange.current = range.cloneRange();
-      if (!isMobile && sel) {
+      if (sel) {
         sel.removeAllRanges();
         sel.addRange(range);
       }
@@ -407,22 +535,29 @@ export const ChatFooter = ({
   const handleToggleEmoji = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (activeDrawer === 'emoji') {
-      // User tapped Keyboard icon: close emoji drawer and bring up virtual keyboard!
-      setActiveDrawer(null);
-      requestAnimationFrame(() => {
-        if (editorRef.current) {
-          editorRef.current.focus();
-        }
-      });
+      // User tapped Keyboard icon: switch smoothly to virtual keyboard
+      switchToKeyboard();
     } else {
-      // User tapped Smiley icon: close virtual keyboard and open emoji drawer at bottom!
+      // User tapped Smiley icon: switch smoothly to emoji drawer
+      const isMobile = isMobileDevice();
+      const isKeyboardOpen = window.visualViewport && (window.innerHeight - window.visualViewport.height > 140);
+
       const sel = window.getSelection();
       if (sel && sel.rangeCount > 0 && editorRef.current && editorRef.current.contains(sel.anchorNode)) {
         savedRange.current = sel.getRangeAt(0).cloneRange();
       }
-      if (editorRef.current) {
-        editorRef.current.blur();
+
+      if (isMobile && editorRef.current) {
+        editorRef.current.setAttribute('inputmode', 'none');
+        editorRef.current.focus({ preventScroll: true });
       }
+
+      // If keyboard was currently up, open drawer instantly (no bounce/jitter)
+      if (isKeyboardOpen) {
+        setInstantDrawer(true);
+        setTimeout(() => setInstantDrawer(false), 80);
+      }
+
       setActiveDrawer('emoji');
       setShowMention(false);
     }
@@ -433,9 +568,19 @@ export const ChatFooter = ({
     if (activeDrawer === 'attachment') {
       setActiveDrawer(null);
     } else {
-      if (editorRef.current) {
-        editorRef.current.blur();
+      const isMobile = isMobileDevice();
+      const isKeyboardOpen = window.visualViewport && (window.innerHeight - window.visualViewport.height > 140);
+
+      if (isMobile && editorRef.current) {
+        editorRef.current.setAttribute('inputmode', 'none');
+        editorRef.current.focus({ preventScroll: true });
       }
+
+      if (isKeyboardOpen) {
+        setInstantDrawer(true);
+        setTimeout(() => setInstantDrawer(false), 80);
+      }
+
       setActiveDrawer('attachment');
       setShowMention(false);
     }
@@ -444,7 +589,47 @@ export const ChatFooter = ({
   const handleEmojiBackspace = () => {
     const el = editorRef.current;
     if (!el) return;
-    document.execCommand('delete', false, null);
+
+    const isMobile = isMobileDevice();
+    if (isMobile) {
+      el.setAttribute('inputmode', 'none');
+      el.focus({ preventScroll: true });
+    } else {
+      el.focus();
+    }
+
+    const sel = window.getSelection();
+    let range = savedRange.current;
+    if (!range || !el.contains(range.startContainer)) {
+      if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) {
+        range = sel.getRangeAt(0);
+      }
+    }
+
+    const beforeText = el.innerText;
+    let deleted = false;
+    try {
+      deleted = document.execCommand('delete', false, null);
+    } catch (e) {
+      deleted = false;
+    }
+
+    // If native delete didn't actually delete anything (or text remained identical):
+    // Perform robust DOM grapheme deletion
+    if (!deleted || el.innerText === beforeText) {
+      deleteGraphemeBeforeCaret(el, range);
+    }
+
+    // Refresh caret so it continues to blink right at the updated location
+    const newRange = document.createRange();
+    newRange.selectNodeContents(el);
+    newRange.collapse(false);
+    if (sel) {
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+    }
+    savedRange.current = newRange.cloneRange();
+
     syncContent();
   };
 
@@ -655,9 +840,18 @@ export const ChatFooter = ({
                   onInput={handleInput}
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
+                  onPointerDown={() => {
+                    if (activeDrawer) {
+                      switchToKeyboard();
+                    } else if (editorRef.current) {
+                      editorRef.current.setAttribute('inputmode', 'text');
+                    }
+                  }}
                   onFocus={() => {
                     setFocused(true);
-                    setActiveDrawer(null);
+                    if (!isSwappingToKeyboard && activeDrawer) {
+                      switchToKeyboard();
+                    }
                   }}
                   onBlur={() => setFocused(false)}
                 />
@@ -705,16 +899,16 @@ export const ChatFooter = ({
       </div>
 
       {/* WhatsApp Bottom Drawers Shelf with smooth transition (No jitter / flicker) */}
-      <div className={`wa-drawer-shelf ${activeDrawer ? 'wa-drawer-open' : ''}`}>
+      <div className={`wa-drawer-shelf ${activeDrawer || isSwappingToKeyboard ? 'wa-drawer-open' : ''} ${instantDrawer ? 'wa-no-anim' : ''}`}>
         <EmojiPickerModal
-          isOpen={showEmojiPicker}
+          isOpen={showEmojiPicker || (isSwappingToKeyboard && activeDrawer === 'emoji')}
           onClose={() => setActiveDrawer(null)}
           onSelectEmoji={handleSelectEmoji}
           onBackspace={handleEmojiBackspace}
         />
 
         <AttachmentModal
-          isOpen={showAttachment}
+          isOpen={showAttachment || (isSwappingToKeyboard && activeDrawer === 'attachment')}
           onClose={() => setActiveDrawer(null)}
           onSelectOption={handleAttachmentOption}
         />

@@ -30,6 +30,7 @@
   --wa-reply-quote-bg: rgba(0, 0, 0, 0.05);
   --wa-tree-system-bg: #f0f2f5;
   --wa-tree-branch-line: #cbd5e1;
+  --wa-keyboard-height: 330px;
 }
 
 .wa-theme-dark {
@@ -2469,6 +2470,10 @@ ol.mcd-rich-list { list-style: decimal; }
   color: var(--wa-text-primary);
   word-break: break-word;
   white-space: pre-wrap;
+  caret-color: var(--wa-primary);
+}
+.wa-editor:focus {
+  caret-color: var(--wa-primary);
 }
 .wa-editor:empty::before {
   content: attr(data-placeholder);
@@ -2755,7 +2760,11 @@ ol.mcd-rich-list { list-style: decimal; }
   }
 
   .wa-drawer-shelf.wa-drawer-open {
-    height: 350px;
+    height: var(--wa-keyboard-height, 330px);
+  }
+
+  .wa-drawer-shelf.wa-no-anim {
+    transition: none !important;
   }
 
   /* WhatsApp Mobile Emoji Drawer: Sits BELOW input bar, replacing the keypad */
@@ -2768,7 +2777,7 @@ ol.mcd-rich-list { list-style: decimal; }
     margin-bottom: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: 350px !important;
+    height: var(--wa-keyboard-height, 330px) !important;
     max-height: 48vh !important;
     border-radius: 0 !important;
     border: none !important;
@@ -2788,7 +2797,7 @@ ol.mcd-rich-list { list-style: decimal; }
     margin-bottom: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: 350px !important;
+    height: var(--wa-keyboard-height, 330px) !important;
     border-radius: 0 !important;
     border: none !important;
     border-top: 1px solid var(--wa-border) !important;

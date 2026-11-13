@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Smile,
+  Keyboard,
   Paperclip,
   Mic,
   Send,
@@ -332,44 +333,90 @@ export const ChatFooter = ({
   const handleSelectEmoji = (emoji) => {
     const el = editorRef.current;
     if (!el) return;
-    el.focus();
-    restoreSelection();
+
+    const isMobile = isMobileDevice();
+
+    // On desktop we focus editor; on mobile, DO NOT call el.focus() so virtual keypad does NOT pop up!
+    if (!isMobile) {
+      el.focus();
+      restoreSelection();
+    }
 
     let inserted = false;
-    try {
-      inserted = document.execCommand('insertText', false, emoji);
-    } catch (e) {
-      inserted = false;
+    if (!isMobile) {
+      try {
+        inserted = document.execCommand('insertText', false, emoji);
+      } catch (e) {
+        inserted = false;
+      }
     }
 
     if (!inserted) {
-      // Robust fallback for mobile WebKit / Android browsers where execCommand is blocked
       const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) {
-        const range = sel.getRangeAt(0);
-        range.deleteContents();
-        const textNode = document.createTextNode(emoji);
-        range.insertNode(textNode);
-        range.setStartAfter(textNode);
-        range.collapse(true);
+      let range = savedRange.current;
+      if (!range || !el.contains(range.startContainer)) {
+        if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) {
+          range = sel.getRangeAt(0);
+        } else {
+          range = document.createRange();
+          range.selectNodeContents(el);
+          range.collapse(false);
+        }
+      }
+
+      range.deleteContents();
+      const textNode = document.createTextNode(emoji);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.collapse(true);
+
+      savedRange.current = range.cloneRange();
+      if (!isMobile && sel) {
         sel.removeAllRanges();
         sel.addRange(range);
-        savedRange.current = range.cloneRange();
-      } else {
-        const textNode = document.createTextNode(emoji);
-        el.appendChild(textNode);
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        const sel = window.getSelection();
-        if (sel) {
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
-        savedRange.current = range.cloneRange();
       }
     }
+
     syncContent();
+  };
+
+  const handleToggleEmoji = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (showEmojiPicker) {
+      // User tapped the Keyboard icon: close emoji picker and bring up virtual keyboard!
+      setShowEmojiPicker(false);
+      requestAnimationFrame(() => {
+        if (editorRef.current) {
+          editorRef.current.focus();
+        }
+      });
+    } else {
+      // User tapped the Smiley icon: close virtual keyboard and open emoji drawer at bottom!
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && editorRef.current && editorRef.current.contains(sel.anchorNode)) {
+        savedRange.current = sel.getRangeAt(0).cloneRange();
+      }
+      if (editorRef.current) {
+        editorRef.current.blur();
+      }
+      setShowEmojiPicker(true);
+      setShowAttachment(false);
+      setShowMention(false);
+    }
+  };
+
+  const handleToggleAttachment = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (showAttachment) {
+      setShowAttachment(false);
+    } else {
+      if (editorRef.current) {
+        editorRef.current.blur();
+      }
+      setShowAttachment(true);
+      setShowEmojiPicker(false);
+      setShowMention(false);
+    }
   };
 
   const openMentionFromButton = () => {
@@ -502,12 +549,6 @@ export const ChatFooter = ({
     <div className="wa-footer-wrapper">
       <ReplyPreview replyTarget={replyTarget} onCancel={onCancelReply} />
 
-      <EmojiPickerModal
-        isOpen={showEmojiPicker}
-        onClose={() => setShowEmojiPicker(false)}
-        onSelectEmoji={handleSelectEmoji}
-      />
-
       {showMention && (
         <MentionPicker
           members={members}
@@ -547,27 +588,18 @@ export const ChatFooter = ({
           </div>
         ) : (
           <>
-            {/* Attachment menu anchored right above the bar */}
-            <AttachmentModal
-              isOpen={showAttachment}
-              onClose={() => setShowAttachment(false)}
-              onSelectOption={handleAttachmentOption}
-            />
-
             <div className={`wa-composer-pill ${focused ? 'wa-composer-focus' : ''}`}>
+              {/* WhatsApp Smiley <-> Keyboard toggle button */}
               <button
                 type="button"
                 data-emoji-toggle="true"
-                className={`wa-pill-btn ${showEmojiPicker ? 'wa-pill-active' : ''}`}
+                className={`wa-pill-btn ${showEmojiPicker ? 'wa-pill-active is-keyboard-toggle' : ''}`}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  setShowEmojiPicker((p) => !p);
-                  setShowAttachment(false);
-                  setShowMention(false);
-                }}
-                title="Emojis"
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={handleToggleEmoji}
+                title={showEmojiPicker ? "Keyboard" : "Emojis"}
               >
-                <Smile size={24} />
+                {showEmojiPicker ? <Keyboard size={24} className="text-emerald-600 animate-pulse" /> : <Smile size={24} />}
               </button>
 
               <button
@@ -575,11 +607,8 @@ export const ChatFooter = ({
                 data-attach-toggle="true"
                 className={`wa-pill-btn wa-attach-btn ${showAttachment ? 'wa-pill-active wa-attach-open' : ''}`}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  setShowAttachment((p) => !p);
-                  setShowEmojiPicker(false);
-                  setShowMention(false);
-                }}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={handleToggleAttachment}
                 title="Attach"
               >
                 <Plus size={26} className="wa-ico-desktop wa-attach-icon" />
@@ -598,7 +627,11 @@ export const ChatFooter = ({
                   onInput={handleInput}
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
-                  onFocus={() => setFocused(true)}
+                  onFocus={() => {
+                    setFocused(true);
+                    setShowEmojiPicker(false);
+                    setShowAttachment(false);
+                  }}
                   onBlur={() => setFocused(false)}
                 />
               </div>
@@ -643,6 +676,19 @@ export const ChatFooter = ({
           </>
         )}
       </div>
+
+      {/* WhatsApp Bottom Drawers (Positioned below input bar, replacing the keypad on mobile) */}
+      <EmojiPickerModal
+        isOpen={showEmojiPicker}
+        onClose={() => setShowEmojiPicker(false)}
+        onSelectEmoji={handleSelectEmoji}
+      />
+
+      <AttachmentModal
+        isOpen={showAttachment}
+        onClose={() => setShowAttachment(false)}
+        onSelectOption={handleAttachmentOption}
+      />
     </div>
   );
 };

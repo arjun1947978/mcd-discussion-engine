@@ -61,8 +61,14 @@ export const EmojiPickerModal = ({ isOpen, onClose, onSelectEmoji }) => {
         onClose();
       }
     };
-    if (isOpen) window.addEventListener('mousedown', handleClickOutside);
-    return () => window.removeEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      window.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [isOpen, onClose]);
 
   const categories = useMemo(

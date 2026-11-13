@@ -1675,12 +1675,6 @@
     max-width: 88%;
   }
 
-  .wa-emoji-picker-container {
-    left: 8px;
-    right: 8px;
-    width: auto;
-  }
-
   /* Desktop Members Column hidden on all mobile screens */
   .mcd-desktop-members-col {
     display: none !important;
@@ -2673,24 +2667,29 @@ ol.mcd-rich-list { list-style: decimal; }
   padding-top: 6px;
 }
 
-/* Attachment popup (anchored above the composer) */
+/* Attachment popup (desktop popover menu) */
 .wa-attachment-stack-menu {
   position: absolute;
-  bottom: 100%;
-  left: 12px;
+  bottom: 65px;
+  left: 48px;
   right: auto;
   margin-bottom: 8px;
   padding: 8px;
-  gap: 2px;
   display: flex;
   flex-direction: column;
   width: 220px;
   background-color: var(--wa-menu-bg);
-  border: none;
+  border: 1px solid var(--wa-border);
   border-radius: 16px;
   box-shadow: 0 6px 24px rgba(11, 20, 26, 0.22);
   transform-origin: bottom left;
   z-index: 40;
+}
+.wa-attach-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
 }
 .wa-attach-in { animation: waMenuIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
 .wa-attach-out { animation: waMenuOut 0.16s ease-in both; pointer-events: none; }
@@ -2721,7 +2720,15 @@ ol.mcd-rich-list { list-style: decimal; }
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.wa-attach-ico { display: flex; }
+.wa-attach-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
 .wa-attach-label { font-size: 0.92rem; }
 
 /* Mobile layout: paperclip + camera inside the pill, like phone chat apps */
@@ -2732,7 +2739,88 @@ ol.mcd-rich-list { list-style: decimal; }
   .wa-attach-btn { order: 3; }
   .wa-editor-wrap { order: 2; }
   .wa-camera-btn { display: flex; order: 4; }
-  .wa-attachment-stack-menu { left: auto; right: 10px; transform-origin: bottom right; }
+
+  /* WhatsApp Mobile Emoji Drawer: Sits BELOW input bar, replacing the keypad */
+  .wa-emoji-picker-container.wa-wa-emoji,
+  .wa-emoji-picker-container {
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    margin-bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 290px !important;
+    max-height: 42vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-top: 1px solid var(--wa-border) !important;
+    box-shadow: none !important;
+    background-color: var(--wa-menu-bg) !important;
+    transform: none !important;
+    z-index: 10 !important;
+  }
+
+  /* WhatsApp Mobile Attachment Tray: Sits BELOW input bar, replacing the keypad */
+  .wa-attachment-stack-menu {
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    margin-bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-top: 1px solid var(--wa-border) !important;
+    box-shadow: none !important;
+    background-color: var(--wa-menu-bg) !important;
+    padding: 18px 14px 22px !important;
+    transform: none !important;
+    z-index: 10 !important;
+  }
+
+  .wa-attach-items-container {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px 8px !important;
+    width: 100% !important;
+  }
+
+  .wa-attach-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 8px 4px !important;
+    gap: 8px !important;
+    border-radius: 14px !important;
+  }
+
+  .wa-attach-ico {
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .wa-attach-label {
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+  }
+}
+
+.is-keyboard-toggle {
+  color: var(--wa-primary) !important;
+  animation: pulseKeyboard 1.5s infinite ease-in-out;
+}
+@keyframes pulseKeyboard {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
 }
 
 
